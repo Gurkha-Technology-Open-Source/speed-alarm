@@ -1,25 +1,83 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Speedometer App</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-    <div class="container">
-        <h1 class="text-center">Speedometer App</h1>
-        <div id="speedometer">
-            <div id="gauge"></div>
-            <h2 id="speed-display">0 km/h</h2>
+    <div class="container py-4">
+        <h1 class="text-center mb-4">Speedometer App</h1>
+
+        <div id="speedometer" class="text-center mb-3" aria-live="polite">
+            <div id="gauge" class="mb-2" style="height:12px;background:#e9ecef;border-radius:6px;overflow:hidden;">
+                <div style="height:100%;background:#28a745;width:0%;" aria-hidden="true"></div>
+            </div>
+            <h2 id="speed-display" class="mb-0" aria-live="polite">0.0 km/h</h2>
+            <small class="text-muted d-block">Current speed measured from device GPS</small>
         </div>
-        <div class="settings">
-            <label for="speed-threshold">Set Speed Threshold (km/h):</label>
-            <input type="number" id="speed-threshold" value="50" min="0" max="200">
+
+        <div class="settings mb-3">
+            <label for="speed-threshold" class="d-block">Set Speed Threshold (km/h):</label>
+            <input type="number" id="speed-threshold" value="50" min="0" max="300" class="form-control w-50" />
+            <small class="text-muted">Value saved locally</small>
         </div>
-        <div id="status-message"></div>
+
+        <div class="mb-3">
+            <button id="request-location" class="btn btn-outline-primary mr-2">Request Location Permission</button>
+            <button id="enable-sound" class="btn btn-outline-secondary">Enable Sound</button>
+        </div>
+
+        <div id="status-message" class="text-danger" role="status" aria-live="assertive"></div>
+
+        <footer class="mt-4 text-muted small">
+            Tip: Tap "Enable Sound" once to allow alarms to play (browser requires a user gesture). Use "Request Location Permission" if the browser didn't prompt automatically.
+        </footer>
     </div>
+
     <script src="script.js"></script>
+
+    <script>
+    // Lightweight helpers that do not change existing script behavior.
+    (function () {
+        // Request geolocation permission using a user gesture to trigger the browser prompt.
+        document.getElementById('request-location').addEventListener('click', function () {
+            if (!navigator.geolocation) {
+                document.getElementById('status-message').textContent = 'Geolocation not supported.';
+                return;
+            }
+            navigator.geolocation.getCurrentPosition(
+                function () {
+                    document.getElementById('status-message').textContent = 'Location permission granted.';
+                    setTimeout(() => { document.getElementById('status-message').textContent = ''; }, 2500);
+                },
+                function (err) {
+                    document.getElementById('status-message').textContent = err && err.message ? err.message : 'Location request failed.';
+                },
+                { enableHighAccuracy: true, timeout: 5000 }
+            );
+        });
+
+        // Try to unlock audio playback with a short user-initiated play/pause of the alarm file.
+        document.getElementById('enable-sound').addEventListener('click', async function (e) {
+            const btn = e.currentTarget;
+            btn.disabled = true;
+            try {
+                // create a short audio instance to avoid relying on script.js internals
+                const a = new Audio('alarm.mp3');
+                a.preload = 'auto';
+                await a.play().catch(() => null);
+                try { a.pause(); a.currentTime = 0; } catch (err) { /* ignore */ }
+                document.getElementById('status-message').textContent = 'Sound enabled.';
+            } catch (err) {
+                document.getElementById('status-message').textContent = 'Unable to enable sound.';
+            } finally {
+                setTimeout(() => { btn.disabled = false; document.getElementById('status-message').textContent = ''; }, 1500);
+            }
+        });
+    })();
+    </script>
 </body>
 </html>
