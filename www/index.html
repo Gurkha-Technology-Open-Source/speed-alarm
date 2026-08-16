@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ne">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+    <meta name="theme-color" content="#0f1420" id="meta-theme-color">
+    <script>
+        (function () {
+            try {
+                var raw = localStorage.getItem('speedalarm.settings.v1');
+                if (!raw) return;
+                var theme = JSON.parse(raw).theme || 'system';
+                var dark =
+                    theme === 'dark' ||
+                    (theme === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
+                document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+            } catch (e) { /* ignore */ }
+        })();
+    </script>
+    <title>स्पिड अलार्म</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+    <div id="overspeed-flash" aria-hidden="true"></div>
+
+    <header class="app-header">
+        <h1 data-i18n="appName">स्पिड अलार्म</h1>
+        <button type="button" id="gps-status" class="status-pill status-idle" data-i18n-aria="gpsTapStart" aria-label="GPS बन्द">GPS बन्द</button>
+    </header>
+
+    <main>
+        <section id="screen-home" class="screen active">
+            <div id="gauge-wrap">
+                <svg id="gauge" viewBox="0 0 200 150" role="img" data-i18n-aria="gaugeLabel" aria-label="स्पिडोमिटर"></svg>
+                <div id="gauge-center">
+                    <div id="speed-value">--</div>
+                    <div id="speed-unit">km/h</div>
+                </div>
+            </div>
+
+            <button id="limit-chip" class="limit-chip" data-i18n-aria="limitChange">
+                <span data-i18n="limit">सीमा</span> <strong id="limit-chip-value">50</strong> <span id="limit-chip-unit">km/h</span>
+            </button>
+
+            <div id="overspeed-banner" class="overspeed-banner hidden">
+                <span data-i18n="overspeedBanner">बिस्तारै चलाउनुहोस् — सीमा नाघ्यो</span>
+                <button id="mute-btn" class="btn-small" data-i18n="mute">मौन</button>
+            </div>
+
+            <div class="trip-stats">
+                <div class="stat"><span class="stat-label" data-i18n="statDistance">दूरी</span><span class="stat-value" id="stat-distance">0.0 km</span></div>
+                <div class="stat"><span class="stat-label" data-i18n="statDuration">अवधि</span><span class="stat-value" id="stat-duration">0:00</span></div>
+                <div class="stat"><span class="stat-label" data-i18n="statAvg">औसत</span><span class="stat-value" id="stat-avg">--</span></div>
+                <div class="stat"><span class="stat-label" data-i18n="statMax">अधिकतम</span><span class="stat-value" id="stat-max">--</span></div>
+            </div>
+
+            <button id="start-stop-btn" class="btn-primary" data-i18n="startTrip">यात्रा सुरु</button>
+            <p id="home-hint" class="hint"></p>
+        </section>
+
+        <section id="screen-trips" class="screen">
+            <div class="totals-row">
+                <div class="total-card"><span id="total-distance">0</span><label id="total-distance-label">km जम्मा</label></div>
+                <div class="total-card"><span id="total-trips">0</span><label data-i18n="tripsCount">यात्रा</label></div>
+                <div class="total-card"><span id="total-score">--</span><label data-i18n="safetyScore">सुरक्षा अङ्क</label></div>
+            </div>
+            <div id="trip-list" class="trip-list"></div>
+            <button id="clear-history-btn" class="btn-danger-outline hidden" data-i18n="clearHistory">इतिहास मेटाउनुहोस्</button>
+        </section>
+
+        <section id="screen-settings" class="screen">
+            <div class="setting-group">
+                <label class="setting-title" for="threshold-input"><span data-i18n="speedLimit">गति सीमा</span> (<span id="threshold-unit-label">km/h</span>)</label>
+                <input type="number" id="threshold-input" step="1" inputmode="numeric">
+                <p class="hint setting-hint" data-i18n="limitsHint"></p>
+                <div class="preset-row" id="preset-row"></div>
+            </div>
+
+            <div class="setting-group">
+                <label class="setting-title" for="theme-select" data-i18n="theme">थिम</label>
+                <select id="theme-select">
+                    <option value="system" data-i18n="themeSystem">सिस्टम (Auto)</option>
+                    <option value="light" data-i18n="themeLight">उज्यालो</option>
+                    <option value="dark" data-i18n="themeDark">अँध्यारो</option>
+                </select>
+            </div>
+
+            <div class="setting-group">
+                <label class="setting-title" for="language-select" data-i18n="language">भाषा</label>
+                <select id="language-select">
+                    <option value="ne" data-i18n="langNe">नेपाली</option>
+                    <option value="en" data-i18n="langEn">English</option>
+                </select>
+            </div>
+
+            <div class="setting-group">
+                <label class="setting-title" for="unit-select" data-i18n="units">एकाइ</label>
+                <select id="unit-select">
+                    <option value="kmh">km/h</option>
+                    <option value="mph">mph</option>
+                </select>
+            </div>
+
+            <div class="setting-group toggles">
+                <label class="toggle-row"><span data-i18n="alarmSound">अलार्म ध्वनि</span><input type="checkbox" id="toggle-sound" checked></label>
+                <label class="toggle-row"><span data-i18n="vibration">कम्पन</span><input type="checkbox" id="toggle-vibration" checked></label>
+                <label class="toggle-row"><span data-i18n="overspeedNotif">गति सीमा नाघ्यो सूचना</span><input type="checkbox" id="toggle-notifications" checked></label>
+                <label class="toggle-row"><span data-i18n="keepAwake">ट्र्याकिङमा स्क्रिन जाग्रित राख्नुहोस्</span><input type="checkbox" id="toggle-awake" checked></label>
+                <label class="toggle-row">
+                    <span><span data-i18n="alwaysOn">सधैं-सक्रिय निगरानी</span><span class="toggle-sub" data-i18n="alwaysOnSub"></span></span>
+                    <input type="checkbox" id="toggle-always-on">
+                </label>
+                <label class="toggle-row">
+                    <span><span data-i18n="bootAutoStart">रिबुट पछि स्वत: सुरु</span><span class="toggle-sub" data-i18n="bootAutoStartSub"></span></span>
+                    <input type="checkbox" id="toggle-boot-auto">
+                </label>
+            </div>
+
+            <div class="setting-group">
+                <p class="about" data-i18n-html="bgBlock"></p>
+                <button type="button" id="battery-settings-btn" class="btn-secondary" data-i18n="batterySettings">ब्याट्री सेटिङ खोल्नुहोस्</button>
+                <p class="about" data-i18n-html="privacyBlock"></p>
+                <p class="about" data-i18n="tagline"></p>
+            </div>
+        </section>
+    </main>
+
+    <nav class="tab-bar">
+        <button class="tab active" data-screen="home">
+            <svg viewBox="0 0 24 24"><path d="M12 4a8 8 0 0 0-8 8 8 8 0 0 0 2.3 5.6l1.4-1.4A6 6 0 0 1 6 12a6 6 0 1 1 12 0 6 6 0 0 1-1.7 4.2l1.4 1.4A8 8 0 0 0 20 12a8 8 0 0 0-8-8zm0 5-2.5 5.5a2 2 0 1 0 3.6 1.7L12 9z"/></svg>
+            <span data-i18n="tabSpeed">गति</span>
+        </button>
+        <button class="tab" data-screen="trips">
+            <svg viewBox="0 0 24 24"><path d="M4 5h16v2H4zm0 6h16v2H4zm0 6h10v2H4z"/></svg>
+            <span data-i18n="tabTrips">यात्रा</span>
+        </button>
+        <button class="tab" data-screen="settings">
+            <svg viewBox="0 0 24 24"><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm8.9 5.4.1-1.4-.1-1.4 2-1.6-2-3.4-2.4 1a8 8 0 0 0-2.4-1.4L15.6 2h-4l-.5 2.6a8 8 0 0 0-2.4 1.4l-2.4-1-2 3.4 2 1.6-.1 1.4.1 1.4-2 1.6 2 3.4 2.4-1a8 8 0 0 0 2.4 1.4l.5 2.6h4l.5-2.6a8 8 0 0 0 2.4-1.4l2.4 1 2-3.4z"/></svg>
+            <span data-i18n="tabSettings">सेटिङ</span>
+        </button>
+    </nav>
+
+    <script type="module" src="js/app.js"></script>
+</body>
+</html>

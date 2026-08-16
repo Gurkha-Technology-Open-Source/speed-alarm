@@ -1,0 +1,17 @@
+{
+    "name": "स्पिड अलार्म",
+    "short_name": "स्पिड अलार्म",
+    "description": "Traffic awareness app: alarms when you exceed your speed limit and logs your trips.",
+    "start_url": ".",
+    "display": "standalone",
+    "background_color": "#0f1420",
+    "theme_color": "#0f1420",
+    "icons": [
+        {
+            "src": "assets/icon.svg",
+            "sizes": "any",
+            "type": "image/svg+xml",
+            "purpose": "any"
+        }
+    ]
+}

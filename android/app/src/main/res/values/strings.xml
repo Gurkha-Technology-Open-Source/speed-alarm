@@ -1,0 +1,13 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Speed Alarm</string>
+    <string name="title_activity_main">Speed Alarm</string>
+    <string name="package_name">org.gurkhatech.speedalarm</string>
+    <string name="custom_url_scheme">org.gurkhatech.speedalarm</string>
+    <string name="widget_title">Speed Alarm</string>
+    <string name="widget_limit_placeholder">LIMIT 50 km/h</string>
+    <string name="widget_no_trips">No trips recorded yet</string>
+    <string name="widget_description">Shows your speed limit and last trip summary.</string>
+    <string name="capacitor_background_geolocation_notification_channel_name">Speed monitoring</string>
+    <string name="capacitor_background_geolocation_notification_icon">ic_stat_speed</string>
+</resources>

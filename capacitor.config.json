@@ -1,0 +1,14 @@
+{
+  "appId": "org.gurkhatech.speedalarm",
+  "appName": "Speed Alarm",
+  "webDir": "www",
+  "android": {
+    "useLegacyBridge": true
+  },
+  "plugins": {
+    "LocalNotifications": {
+      "smallIcon": "ic_stat_speed",
+      "iconColor": "#E53935"
+    }
+  }
+}

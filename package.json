@@ -1,0 +1,29 @@
+{
+  "name": "speed-alarm",
+  "version": "1.0.0",
+  "description": "Traffic awareness speed alarm app for Nepal",
+  "private": true,
+  "scripts": {
+    "sync": "cap sync android",
+    "open:android": "cap open android",
+    "build:android": "npm run sync && cd android && ./gradlew assembleDebug",
+    "install:android": "adb install -r android/app/build/outputs/apk/debug/app-debug.apk",
+    "serve": "python3 -m http.server 8765 --directory www"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Gurkha-Technology-Open-Source/speed-alarm.git"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@capacitor-community/background-geolocation": "^1.2.26",
+    "@capacitor-community/keep-awake": "^8.0.1",
+    "@capacitor/android": "^8.5.0",
+    "@capacitor/app": "^8.1.1",
+    "@capacitor/cli": "^8.5.0",
+    "@capacitor/core": "^8.5.0",
+    "@capacitor/haptics": "^8.0.2",
+    "@capacitor/local-notifications": "^8.2.1",
+    "@capacitor/preferences": "^8.0.1"
+  }
+}
