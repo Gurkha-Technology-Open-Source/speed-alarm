@@ -57,9 +57,15 @@ const STRINGS = {
         langNe: 'नेपाली',
         langEn: 'English',
         theme: 'थिम',
-        themeSystem: 'सिस्टम (Auto)',
+        themeSystem: 'स्वतः',
         themeLight: 'उज्यालो',
         themeDark: 'अँध्यारो',
+        sectionAppearance: 'देखावट',
+        sectionAlerts: 'चेतावनी',
+        sectionMonitoring: 'निगरानी',
+        sectionAbout: 'बारेमा',
+        decreaseLimit: 'सीमा घटाउनुहोस्',
+        increaseLimit: 'सीमा बढाउनुहोस्',
         bgInfo: 'पृष्ठभूमि प्रयोग:',
         bgInfoText: 'Android मा GPS सुरु भएपछि स्क्रिन बन्द भए पनि निगरानी जारी रहन्छ। कम्पन र सूचना काम गर्छ; अलार्म ध्वनि फोन अनुसार फरक हुन सक्छ। ट्र्याकिङ रोकियो भने ब्याट्री सेटिङमा Speed Alarm लाई अप्रतिबन्धित प्रयोग दिनुहोस्।',
         batterySettings: 'ब्याट्री सेटिङ खोल्नुहोस्',
@@ -72,6 +78,11 @@ const STRINGS = {
         preset50: '५० · पूर्वनिर्धारित',
         preset60: '६० · अर्ध-सहरी',
         preset80: '८० · राजमार्ग',
+        preset20Name: 'विद्यालय / आवासीय',
+        preset40Name: 'सहरी',
+        preset50Name: 'पूर्वनिर्धारित',
+        preset60Name: 'अर्ध-सहरी',
+        preset80Name: 'राजमार्ग',
         metricDistance: 'दूरी',
         metricDuration: 'अवधि',
         metricAvg: 'औसत',
@@ -144,9 +155,15 @@ const STRINGS = {
         langNe: 'नेपाली',
         langEn: 'English',
         theme: 'Theme',
-        themeSystem: 'System (Auto)',
+        themeSystem: 'Auto',
         themeLight: 'Light',
         themeDark: 'Dark',
+        sectionAppearance: 'Appearance',
+        sectionAlerts: 'Alerts',
+        sectionMonitoring: 'Monitoring',
+        sectionAbout: 'About',
+        decreaseLimit: 'Decrease limit',
+        increaseLimit: 'Increase limit',
         bgInfo: 'Background use:',
         bgInfoText: 'On Android, once GPS is on, monitoring continues with the screen off. Vibration and notifications work; alarm sound depends on your device. If tracking stops, allow unrestricted battery use for Speed Alarm.',
         batterySettings: 'Open battery settings',
@@ -159,6 +176,11 @@ const STRINGS = {
         preset50: '50 · default',
         preset60: '60 · semi-urban',
         preset80: '80 · highway',
+        preset20Name: 'School / residential',
+        preset40Name: 'Urban',
+        preset50Name: 'Default',
+        preset60Name: 'Semi-urban',
+        preset80Name: 'Highway',
         metricDistance: 'distance',
         metricDuration: 'duration',
         metricAvg: 'avg',
@@ -233,6 +255,11 @@ export function applyStaticI18n(root = document) {
 
 export function presetLabel(kmh) {
     const map = { 20: 'preset20', 40: 'preset40', 50: 'preset50', 60: 'preset60', 80: 'preset80' };
+    return t(map[kmh] || String(kmh));
+}
+
+export function presetName(kmh) {
+    const map = { 20: 'preset20Name', 40: 'preset40Name', 50: 'preset50Name', 60: 'preset60Name', 80: 'preset80Name' };
     return t(map[kmh] || String(kmh));
 }
 

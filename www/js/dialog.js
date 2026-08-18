@@ -16,9 +16,24 @@ export function confirmDialog({ title, message, confirmText = 'OK', cancelText =
                 </div>
             </div>`;
 
+        const previousOverflow = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+
+        let settled = false;
         const close = (result) => {
-            backdrop.remove();
-            resolve(result);
+            if (settled) return;
+            settled = true;
+            document.removeEventListener('keydown', onKey);
+            document.body.style.overflow = previousOverflow;
+            backdrop.classList.add('closing');
+            setTimeout(() => {
+                backdrop.remove();
+                resolve(result);
+            }, 180);
+        };
+
+        const onKey = (e) => {
+            if (e.key === 'Escape') close(false);
         };
 
         backdrop.querySelector('.dialog-cancel').addEventListener('click', () => close(false));
@@ -26,6 +41,7 @@ export function confirmDialog({ title, message, confirmText = 'OK', cancelText =
         backdrop.addEventListener('click', (e) => {
             if (e.target === backdrop) close(false);
         });
+        document.addEventListener('keydown', onKey);
 
         document.body.appendChild(backdrop);
         backdrop.querySelector('.dialog-confirm').focus();

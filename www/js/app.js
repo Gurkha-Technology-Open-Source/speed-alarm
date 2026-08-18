@@ -39,7 +39,7 @@ import {
     t,
     setLanguage,
     applyStaticI18n,
-    presetLabel,
+    presetName,
     formatTripDateLocalized,
     onLanguageChange,
 } from './i18n.js';
@@ -51,6 +51,7 @@ const speedValue = el('speed-value');
 const speedUnit = el('speed-unit');
 const gpsStatus = el('gps-status');
 const startStopBtn = el('start-stop-btn');
+const startStopLabel = el('start-stop-label');
 const overspeedBanner = el('overspeed-banner');
 const overspeedFlash = el('overspeed-flash');
 const muteBtn = el('mute-btn');
@@ -65,11 +66,9 @@ const tripList = el('trip-list');
 const clearHistoryBtn = el('clear-history-btn');
 const thresholdInput = el('threshold-input');
 const thresholdUnitLabel = el('threshold-unit-label');
-const unitSelect = el('unit-select');
-const languageSelect = el('language-select');
-const themeSelect = el('theme-select');
 const presetRow = el('preset-row');
 const homeHint = el('home-hint');
+const gpsStatusText = el('gps-status-text');
 
 /** Nepal speed limits — manual override until per-road lat/lng DB is added. */
 const NEPAL_LIMIT_PRESETS = [20, 40, 50, 60, 80];
@@ -108,9 +107,9 @@ function applyLanguage() {
     refreshLimitUI();
     renderLiveTripStats();
     if (engine.running) {
-        startStopBtn.textContent = t('stopTrip');
+        startStopLabel.textContent = t('stopTrip');
     } else {
-        startStopBtn.textContent = t('startTrip');
+        startStopLabel.textContent = t('startTrip');
     }
     updateHomeHint();
     if (document.querySelector('#screen-trips.active')) renderTrips();
@@ -126,9 +125,9 @@ function refreshLimitUI() {
     thresholdInput.min = Math.round(kmhToUnit(MIN_LIMIT_KMH, s.unit));
     thresholdInput.max = Math.round(kmhToUnit(MAX_LIMIT_KMH, s.unit));
     thresholdInput.value = displayLimit;
-    unitSelect.value = s.unit;
-    languageSelect.value = s.language;
-    themeSelect.value = s.theme || 'system';
+    setSegment('unit-seg', s.unit);
+    setSegment('language-seg', s.language);
+    setSegment('theme-seg', s.theme || 'system');
     gauge.setLimit(kmhToUnit(s.thresholdKmh, s.unit));
     refreshPresetLabels();
     for (const btn of presetRow.children) {
@@ -173,7 +172,7 @@ function setGpsStatus(state, message) {
     const [cls, key] = map[state] || map.off;
     const text = key === 'active' && message ? `GPS ${message}` : t(key);
     gpsStatus.className = `status-pill ${cls}`;
-    gpsStatus.textContent = text;
+    gpsStatusText.textContent = text;
     const tracking = engine.running;
     gpsStatus.setAttribute(
         'aria-label',
@@ -216,11 +215,21 @@ async function renderTrips() {
     el('total-distance-label').textContent = `${distanceUnitShort(s.unit)} ${t('tripsTotal')}`;
     el('total-trips').textContent = agg.count;
     el('total-score').textContent = agg.avgScore ?? '--';
+    const scoreCard = el('total-score-card');
+    scoreCard.classList.remove('score-good', 'score-mid', 'score-bad');
+    if (agg.avgScore != null) scoreCard.classList.add(scoreClass(agg.avgScore));
 
     clearHistoryBtn.classList.toggle('hidden', trips.length === 0);
 
     if (!trips.length) {
-        tripList.innerHTML = `<div class="empty-list">${t('noTrips')}<br>${t('noTripsSub')}</div>`;
+        tripList.innerHTML = `
+            <div class="empty-list">
+                <svg class="empty-icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <path fill="currentColor" d="M12 4a8 8 0 0 0-8 8 8 8 0 0 0 2.3 5.6l1.4-1.4A6 6 0 0 1 6 12a6 6 0 1 1 12 0 6 6 0 0 1-1.7 4.2l1.4 1.4A8 8 0 0 0 20 12a8 8 0 0 0-8-8zm0 5-2.5 5.5a2 2 0 1 0 3.6 1.7L12 9z"/>
+                </svg>
+                <p class="empty-title">${t('noTrips')}</p>
+                <p class="empty-sub">${t('noTripsSub')}</p>
+            </div>`;
         return;
     }
 
@@ -230,11 +239,16 @@ async function renderTrips() {
                 trip.overspeedEpisodes > 0
                     ? `<div class="trip-overspeed">${t('overLimit')} ${trip.overspeedEpisodes}${t('times')} · ${formatDuration(trip.overspeedSec)} ${t('total')}</div>`
                     : '';
-            const recovered = trip.recovered ? ` (${t('recovered')})` : '';
+            const recovered = trip.recovered ? `<span class="trip-badge">${t('recovered')}</span>` : '';
+            const limit = `${Math.round(kmhToUnit(trip.limitKmh || 0, s.unit))} ${unitLabel(s.unit)}`;
             return `
             <div class="trip-card">
                 <div class="trip-card-head">
-                    <span class="trip-date">${formatTripDateLocalized(trip.startedAt)}${recovered}</span>
+                    <div class="trip-date-wrap">
+                        <span class="trip-date">${formatTripDateLocalized(trip.startedAt)}</span>
+                        <span class="trip-limit">${limit}</span>
+                        ${recovered}
+                    </div>
                     <span class="trip-score ${scoreClass(trip.score)}">${trip.score}</span>
                 </div>
                 <div class="trip-metrics">
@@ -281,8 +295,10 @@ async function startTracking() {
 
         if (getSettings().keepAwake) await keepAwake(true);
 
-        startStopBtn.textContent = t('stopTrip');
+        startStopLabel.textContent = t('stopTrip');
         startStopBtn.classList.add('stop');
+        document.body.classList.add('tracking');
+        speedValue.classList.remove('placeholder');
         updateHomeHint();
         tripTicker = setInterval(renderLiveTripStats, 1000);
     } catch (err) {
@@ -311,10 +327,12 @@ async function stopTracking() {
         recorder = null;
 
         speedValue.textContent = '--';
+        speedValue.classList.add('placeholder');
         gauge.setValue(0);
         renderLiveTripStats();
-        startStopBtn.textContent = t('startTrip');
+        startStopLabel.textContent = t('startTrip');
         startStopBtn.classList.remove('stop');
+        document.body.classList.remove('tracking');
         updateHomeHint();
     } finally {
         setTrackingBusy(false);
@@ -343,6 +361,7 @@ engine.addEventListener('speed', (e) => {
     const s = getSettings();
     const display = kmhToUnit(kmh, s.unit);
     speedValue.textContent = String(Math.round(display));
+    speedValue.classList.remove('placeholder');
     gauge.setValue(display);
 
     alarm.update(
@@ -363,6 +382,7 @@ engine.addEventListener('status', (e) => {
     setGpsStatus(state, message);
     if (state === 'lost') {
         speedValue.textContent = '--';
+        speedValue.classList.add('placeholder');
         gauge.setValue(0);
         alarm.reset();
     }
@@ -385,9 +405,28 @@ gpsStatus.addEventListener('click', () => toggleTracking());
 
 muteBtn.addEventListener('click', () => alarm.mute());
 
-limitChip.addEventListener('click', () => switchScreen('settings'));
+limitChip.addEventListener('click', () => {
+    switchScreen('settings');
+    el('threshold-input')?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+});
 
-thresholdInput.addEventListener('change', async () => {
+function setSegment(id, value) {
+    for (const btn of el(id).querySelectorAll('button[data-value]')) {
+        const on = btn.dataset.value === value;
+        btn.classList.toggle('active', on);
+        btn.setAttribute('aria-checked', String(on));
+    }
+}
+
+function bindSegment(id, handler) {
+    el(id).addEventListener('click', (e) => {
+        const btn = e.target.closest('button[data-value]');
+        if (!btn) return;
+        handler(btn.dataset.value);
+    });
+}
+
+async function commitThresholdFromInput() {
     const s = getSettings();
     const val = Number(thresholdInput.value);
     if (!Number.isFinite(val)) {
@@ -403,23 +442,38 @@ thresholdInput.addEventListener('change', async () => {
     if (recorder) recorder.limitKmh = thresholdKmh;
     refreshLimitUI();
     pushWidgetUpdate();
-});
+}
 
-unitSelect.addEventListener('change', async () => {
-    await updateSettings({ unit: unitSelect.value });
+thresholdInput.addEventListener('change', () => commitThresholdFromInput());
+
+function bumpThreshold(delta) {
+    const min = Number(thresholdInput.min);
+    const max = Number(thresholdInput.max);
+    const current = Number(thresholdInput.value);
+    if (!Number.isFinite(current)) return;
+    thresholdInput.value = String(Math.min(max, Math.max(min, current + delta)));
+    commitThresholdFromInput();
+}
+
+el('threshold-dec').addEventListener('click', () => bumpThreshold(-1));
+el('threshold-inc').addEventListener('click', () => bumpThreshold(1));
+
+bindSegment('unit-seg', async (unit) => {
+    await updateSettings({ unit });
     applyLanguage();
     pushWidgetUpdate();
 });
 
-languageSelect.addEventListener('change', async () => {
-    await updateSettings({ language: languageSelect.value });
-    setLanguage(languageSelect.value);
+bindSegment('language-seg', async (language) => {
+    await updateSettings({ language });
+    setLanguage(language);
     applyLanguage();
 });
 
-themeSelect.addEventListener('change', async () => {
-    await updateSettings({ theme: themeSelect.value });
-    initTheme(themeSelect.value);
+bindSegment('theme-seg', async (theme) => {
+    await updateSettings({ theme });
+    initTheme(theme);
+    setSegment('theme-seg', theme);
 });
 
 for (const [id, key] of [
@@ -474,8 +528,10 @@ function switchScreen(name) {
     for (const s of document.querySelectorAll('.screen')) {
         s.classList.toggle('active', s.id === `screen-${name}`);
     }
-    for (const t of document.querySelectorAll('.tab')) {
-        t.classList.toggle('active', t.dataset.screen === name);
+    for (const tab of document.querySelectorAll('.tab')) {
+        const on = tab.dataset.screen === name;
+        tab.classList.toggle('active', on);
+        tab.setAttribute('aria-selected', String(on));
     }
     if (name === 'trips') renderTrips();
 }
@@ -490,8 +546,11 @@ function buildPresets() {
     presetRow.innerHTML = '';
     for (const kmh of NEPAL_LIMIT_PRESETS) {
         const btn = document.createElement('button');
+        btn.type = 'button';
         btn.className = 'preset-btn';
         btn.dataset.kmh = kmh;
+        btn.innerHTML = '<span class="preset-speed"></span><span class="preset-name"></span>';
+        if (kmh === 80) btn.classList.add('preset-wide');
         btn.addEventListener('click', async () => {
             await updateSettings({ thresholdKmh: kmh });
             if (recorder) recorder.limitKmh = kmh;
@@ -507,11 +566,8 @@ function refreshPresetLabels() {
     const s = getSettings();
     for (const btn of presetRow.children) {
         const kmh = Number(btn.dataset.kmh);
-        if (s.unit === 'kmh') {
-            btn.textContent = presetLabel(kmh);
-        } else {
-            btn.textContent = Math.round(kmhToUnit(kmh, s.unit));
-        }
+        btn.querySelector('.preset-speed').textContent = String(Math.round(kmhToUnit(kmh, s.unit)));
+        btn.querySelector('.preset-name').textContent = presetName(kmh);
     }
 }
 

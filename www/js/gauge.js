@@ -49,6 +49,21 @@ export class Gauge {
         this.value.setAttribute('stroke-linecap', 'round');
         this.svg.appendChild(this.value);
 
+        for (let i = 0; i <= 8; i++) {
+            const deg = START_DEG + (SWEEP_DEG * i) / 8;
+            const len = i % 2 === 0 ? 10 : 6;
+            const inner = polar(deg, R - STROKE / 2 - 3);
+            const outer = polar(deg, R - STROKE / 2 - 3 - len);
+            const tick = document.createElementNS(ns, 'line');
+            tick.setAttribute('class', i % 2 === 0 ? 'tick major' : 'tick');
+            tick.setAttribute('x1', inner.x);
+            tick.setAttribute('y1', inner.y);
+            tick.setAttribute('x2', outer.x);
+            tick.setAttribute('y2', outer.y);
+            tick.setAttribute('stroke-width', i % 2 === 0 ? 2 : 1.4);
+            this.svg.appendChild(tick);
+        }
+
         this.marker = document.createElementNS(ns, 'line');
         this.marker.setAttribute('class', 'limit-marker');
         this.marker.setAttribute('stroke-width', 3);
